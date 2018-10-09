@@ -98,11 +98,8 @@ static int read_flac_page(ogg_codec_t *codec, ogg_page *page)
     flac_data_t *flac_data = codec->codec_data;
     ogg_packet packet;
     unsigned rate;
-    char is_page_eos;
 
     (void)page;
-
-    is_page_eos = ogg_page_eos(page);
 
     if (flac_data->err)
         return SHOUTERR_INSANE;
@@ -119,9 +116,8 @@ static int read_flac_page(ogg_codec_t *codec, ogg_page *page)
     }
 
     rate = FLAC__stream_decoder_get_sample_rate(flac_data->dec);
-    if (rate && !is_page_eos) {
+    if (rate)
         codec->senttime += ((flac_data->samplesInPage * 1000000) / rate);
-    }
 
     return SHOUTERR_SUCCESS;
 }
