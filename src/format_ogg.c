@@ -59,6 +59,9 @@ static codec_open_t codecs[] = {
     _shout_open_theora,
 #endif
     _shout_open_opus,
+#ifdef HAVE_FLAC
+    _shout_open_flac,
+#endif
 #ifdef HAVE_SPEEX
     _shout_open_speex,
 #endif

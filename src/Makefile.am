@@ -15,6 +15,10 @@ if HAVE_SPEEX
   MAYBE_SPEEX = codec_speex.c
 endif
 
+if HAVE_FLAC
+  MAYBE_FLAC = codec_flac.c
+endif
+
 if HAVE_TLS
   MAYBE_TLS = tls.c
 endif
@@ -24,16 +28,16 @@ SUBDIRS = common/avl common/net common/timing common/httpp $(MAYBE_THREAD)
 lib_LTLIBRARIES = libshout.la
 libshout_la_LDFLAGS = -version-info 5:0:2
 
-EXTRA_DIST = codec_theora.c codec_speex.c tls.c
+EXTRA_DIST = codec_theora.c codec_speex.c codec_flac.c tls.c
 noinst_HEADERS = format_ogg.h shout_private.h util.h
 PROTOCOLS=proto_http.c proto_xaudiocast.c proto_icy.c proto_roaraudio.c
 FORMATS=format_ogg.c format_webm.c format_mp3.c
-CODECS=codec_vorbis.c codec_opus.c $(MAYBE_THEORA) $(MAYBE_SPEEX)
+CODECS=codec_vorbis.c codec_opus.c $(MAYBE_THEORA) $(MAYBE_SPEEX) $(MAYBE_FLAC)
 libshout_la_SOURCES = shout.c util.c queue.c $(PROTOCOLS) $(FORMATS) $(CODECS) $(MAYBE_TLS)
 AM_CFLAGS = @XIPH_CFLAGS@ -I$(top_builddir)/include -I$(srcdir)/common/
 
 libshout_la_LIBADD = common/net/libicenet.la common/timing/libicetiming.la common/avl/libiceavl.la\
-		common/httpp/libicehttpp.la $(MAYBE_THREAD_LIB) $(THEORA_LIBS) $(VORBIS_LIBS) $(SPEEX_LIBS) @XIPH_LIBS@
+		common/httpp/libicehttpp.la $(MAYBE_THREAD_LIB) $(THEORA_LIBS) $(VORBIS_LIBS) $(SPEEX_LIBS) $(FLAC_LIBS) @XIPH_LIBS@
 
 
 debug:

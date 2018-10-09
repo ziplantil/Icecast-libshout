@@ -160,6 +160,25 @@ then
   AC_DEFINE([HAVE_SPEEX], 1, [Define if you want speex streams supported])
 fi
 
+AC_ARG_ENABLE([flac],
+  AC_HELP_STRING([--disable-flac],[do not build with FLAC support]))
+
+if test "x$enable_flac" != "xno"; then
+PKG_CHECK_MODULES(FLAC, flac, [
+    HAVE_FLAC="yes"
+    SHOUT_REQUIRES="$SHOUT_REQUIRES, flac"
+  ], [
+    XIPH_PATH_FLAC(, [AC_MSG_WARN([FLAC library not found, disabling])])
+  ])
+fi
+XIPH_VAR_APPEND([XIPH_CPPFLAGS],[$FLAC_CFLAGS])
+XIPH_VAR_PREPEND([XIPH_LIBS],[$FLAC_LDFLAGS $FLAC_LIBS])
+AM_CONDITIONAL([HAVE_FLAC], [test -n "$FLAC_LIBS"])
+if test -n "$FLAC_LIBS"
+then
+  AC_DEFINE([HAVE_FLAC], 1, [Define if you want FLAC streams supported])
+fi
+
 dnl If pkgconfig is found, install a shout.pc file.
 
 AC_ARG_ENABLE([pkgconfig],
@@ -205,7 +224,7 @@ SHOUT_LIBS="-lshout"
 
 XIPH_CLEAN_CCFLAGS([$SHOUT_CPPFLAGS], [SHOUT_CPPFLAGS])
 XIPH_CLEAN_CCFLAGS([$SHOUT_CFLAGS], [SHOUT_CFLAGS])
-XIPH_CLEAN_CCFLAGS([$VORBIS_LIBS $THEORA_LIBS $SPEEX_LIBS $PTHREAD_LIBS $OPENSSL_LIBS $OPENSSL_LIBS $LIBS], [SHOUT_LIBDEPS])
+XIPH_CLEAN_CCFLAGS([$VORBIS_LIBS $THEORA_LIBS $SPEEX_LIBS $FLAC_LIBS $PTHREAD_LIBS $OPENSSL_LIBS $OPENSSL_LIBS $LIBS], [SHOUT_LIBDEPS])
 AC_SUBST(PTHREAD_CPPFLAGS)
 AC_SUBST(SHOUT_LIBDEPS)
 AC_SUBST(SHOUT_REQUIRES)
