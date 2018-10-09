@@ -47,7 +47,6 @@ typedef struct {
 static int read_flac_page(ogg_codec_t *codec, ogg_page *page);
 static void free_flac_data(void *codec_data);
 FLAC__StreamDecoderReadStatus flac_read_callback(const FLAC__StreamDecoder *decoder, FLAC__byte buffer[], size_t *bytes, void *client_data);
-FLAC__bool flac_eof_callback(const FLAC__StreamDecoder *decoder, void *client_data);
 FLAC__StreamDecoderWriteStatus flac_write_callback(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 *const buffer[], void *client_data);
 void flac_error_callback(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *client_data);
 
@@ -56,7 +55,7 @@ int _shout_open_flac(ogg_codec_t *codec, ogg_page *page)
 {
     flac_data_t *flac_data = calloc(1, sizeof(flac_data_t));
     FLAC__StreamDecoder *decoder = NULL;
-	ogg_packet packet;
+    ogg_packet packet;
 
     (void)page;
 
@@ -67,13 +66,13 @@ int _shout_open_flac(ogg_codec_t *codec, ogg_page *page)
         return SHOUTERR_UNSUPPORTED;
     }
 
-    if (FLAC__STREAM_DECODER_INIT_STATUS_OK != FLAC__stream_decoder_init_stream(decoder, flac_read_callback, NULL, NULL, NULL, flac_eof_callback, flac_write_callback, NULL, flac_error_callback, flac_data)) {
+    if (FLAC__STREAM_DECODER_INIT_STATUS_OK != FLAC__stream_decoder_init_stream(decoder, flac_read_callback, NULL, NULL, NULL, NULL, flac_write_callback, NULL, flac_error_callback, flac_data)) {
         free_flac_data(flac_data);
 
         return SHOUTERR_UNSUPPORTED;
     }
 
-	ogg_stream_packetout(&codec->os, &packet);
+    ogg_stream_packetout(&codec->os, &packet);
 
     flac_data->dec = decoder;
     flac_data->err = 0;
@@ -105,7 +104,7 @@ static int read_flac_page(ogg_codec_t *codec, ogg_page *page)
 
     is_page_eos = ogg_page_eos(page);
 
-    if (flac_data->err) 
+    if (flac_data->err)
         return SHOUTERR_INSANE;
 
     flac_data->samplesInPage = 0;
@@ -118,7 +117,7 @@ static int read_flac_page(ogg_codec_t *codec, ogg_page *page)
         if (!FLAC__stream_decoder_process_single(flac_data->dec))
             return SHOUTERR_INSANE;
     }
-    
+
     rate = FLAC__stream_decoder_get_sample_rate(flac_data->dec);
     if (rate && !is_page_eos) {
         codec->senttime += ((flac_data->samplesInPage * 1000000) / rate);
@@ -143,7 +142,7 @@ FLAC__StreamDecoderReadStatus flac_read_callback(const FLAC__StreamDecoder *deco
 {
     flac_data_t *flac_data = client_data;
     ogg_packet packet;
-    
+
     if (flac_data->hasPacket) {
         unsigned char *packet_data;
         long remaining;
@@ -168,10 +167,6 @@ FLAC__StreamDecoderReadStatus flac_read_callback(const FLAC__StreamDecoder *deco
 
     *bytes = 0;
     return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
-}
-
-FLAC__bool flac_eof_callback(const FLAC__StreamDecoder *decoder, void *client_data) {
-    return false;
 }
 
 FLAC__StreamDecoderWriteStatus flac_write_callback(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 *const buffer[], void *client_data)
