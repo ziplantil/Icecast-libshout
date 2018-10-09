@@ -57,7 +57,7 @@ else
   then
       AC_LINK_IFELSE([AC_LANG_PROGRAM(
                   [#include "FLAC/stream_decoder.h"],
-                  [void *p = FLAC__stream_decoder_init_ogg_stream;])],
+                  [void *p = FLAC__stream_decoder_init_stream;])],
               [],
               [xt_have_flac="no"])
   fi
