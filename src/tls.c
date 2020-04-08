@@ -93,10 +93,6 @@ static inline int tls_setup(shout_tls_t *tls)
     SSL_load_error_strings();
     SSLeay_add_all_algorithms();
     SSLeay_add_ssl_algorithms();
-#else
-    OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
-    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
-#endif
 
     tls->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
     ssl_opts |= SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3; // Disable SSLv2 and SSLv3
