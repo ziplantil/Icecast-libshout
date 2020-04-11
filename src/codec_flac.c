@@ -35,12 +35,12 @@
 
 /* -- local data structures -- */
 typedef struct {
-    FLAC__StreamDecoder *dec;
-    uint64_t samplesInPage;
-    long packetStartIndex;
-    char err;
-    char hasPacket;
-    ogg_packet packet;
+    FLAC__StreamDecoder     *dec;               /* stream decoder */
+    uint64_t                samples_in_page;    /* total number of samples in page thus far */
+    char                    err;                /* <>0 if we got an error while decoding */
+    char                    has_packet;         /* <>0 if we have a packet to write */
+    long                    packet_offset;      /* the offset to the current packet data to give the FLAC decoder */
+    ogg_packet              packet;             /* current OGG packet */
 } flac_data_t;
 
 /* -- local prototypes -- */
@@ -76,9 +76,9 @@ int _shout_open_flac(ogg_codec_t *codec, ogg_page *page)
 
     flac_data->dec = decoder;
     flac_data->err = 0;
-    flac_data->hasPacket = 1;
+    flac_data->has_packet = 1;
     flac_data->packet = packet;
-    flac_data->packetStartIndex = 9L;
+    flac_data->packet_offset = 0L;
 
     if (!FLAC__stream_decoder_process_single(decoder)) {
         free_flac_data(flac_data);
@@ -104,20 +104,20 @@ static int read_flac_page(ogg_codec_t *codec, ogg_page *page)
     if (flac_data->err)
         return SHOUTERR_INSANE;
 
-    flac_data->samplesInPage = 0;
+    flac_data->samples_in_page = 0;
 
     while (ogg_stream_packetout(&codec->os, &packet) > 0)
     {
-        flac_data->hasPacket = 1;
+        flac_data->has_packet = 1;
         flac_data->packet = packet;
-        flac_data->packetStartIndex = 0;
+        flac_data->packet_offset = 0L;
         if (!FLAC__stream_decoder_process_single(flac_data->dec))
             return SHOUTERR_INSANE;
     }
 
     rate = FLAC__stream_decoder_get_sample_rate(flac_data->dec);
     if (rate)
-        codec->senttime += ((flac_data->samplesInPage * 1000000) / rate);
+        codec->senttime += ((flac_data->samples_in_page * 1000000) / rate);
 
     return SHOUTERR_SUCCESS;
 }
@@ -139,23 +139,23 @@ FLAC__StreamDecoderReadStatus flac_read_callback(const FLAC__StreamDecoder *deco
     flac_data_t *flac_data = client_data;
     ogg_packet packet;
 
-    if (flac_data->hasPacket) {
+    if (flac_data->has_packet) {
         unsigned char *packet_data;
         long remaining;
 
         /* give rest of packet */
         packet = flac_data->packet;
-        packet_data = packet.packet + flac_data->packetStartIndex;
-        remaining = packet.bytes - flac_data->packetStartIndex;
+        packet_data = packet.packet + flac_data->packet_offset;
+        remaining = packet.bytes - flac_data->packet_offset;
 
         if (remaining > *bytes) {
             memcpy(buffer, packet_data, *bytes);
-            flac_data->packetStartIndex += *bytes;
+            flac_data->packet_offset += *bytes;
         } else {
             memcpy(buffer, packet_data, remaining);
             *bytes = (size_t) remaining;
-            flac_data->hasPacket = 0;
-            flac_data->packetStartIndex = 0L;
+            flac_data->has_packet = 0;
+            flac_data->packet_offset = 0L;
         }
 
         return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
@@ -168,7 +168,7 @@ FLAC__StreamDecoderReadStatus flac_read_callback(const FLAC__StreamDecoder *deco
 FLAC__StreamDecoderWriteStatus flac_write_callback(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 *const buffer[], void *client_data)
 {
     flac_data_t *flac_data = client_data;
-    flac_data->samplesInPage += frame->header.blocksize;
+    flac_data->samples_in_page += frame->header.blocksize;
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
